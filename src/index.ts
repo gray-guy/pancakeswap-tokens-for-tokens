@@ -26,8 +26,8 @@ const routerContract = new ethers.Contract(process.env.ROUTER_V2_ADDRESS, uniswa
 const OtherTokenAddress = "0xec5dcb5dbf4b114c9d0f65bccab49ec54f6a0867"; // DAI
 
 async function main() {
-  // await convertOtherTokenToUSDTAndTransferToPlatformAddress(50, 1);
-  await getOtherTokenAmountForExactUSDT(1, 1, OtherTokenAddress)
+  await convertOtherTokenToUSDTAndTransferToPlatformAddress(0.01, 1);
+  // await getOtherTokenAmountForExactUSDT(1, 1, OtherTokenAddress)
   // await depositToken(0.01)
 }
 
@@ -110,21 +110,24 @@ async function convertOtherTokenToUSDTAndTransferToPlatformAddress(
         gasLimit: 1000000,
       }
     );
+    
+    // const swapResultData = {
+    //   //userID
+    //   //packID
+    //   senderWalletAddress: signer.address, // user's wallet address
+    //   targetWalletAddress: process.env.PLATFORM_ADDRESS,
+    //   txnHash: swapTx.hash,
+    //   swapToken: OtherTokenAddress,
+    //   amountIn: ethers.utils.formatUnits(amountInOtherToken, otherTokenDecimals),
+    //   amountOut: ethers.utils.formatUnits(amountOutExactUSDT, usdtDecimals),
+    // };
+    // // POST API CREATE TRANSACTION (/transaction) WITH ABOVE DATA
+
     const swapReceipt = await swapTx.wait();
     
     // Check if the transaction was successful
     if (swapReceipt.status === 1) {
-      
-      const swapResultData = {
-        hash: swapReceipt.transactionHash,
-        inputToken: OtherTokenAddress,
-        amountIn: ethers.utils.formatUnits(amountInOtherToken, otherTokenDecimals),
-        amountOut: ethers.utils.formatUnits(amountOutExactUSDT, usdtDecimals),
-        fromAddress: signer.address, // user's wallet address
-        receiverAddress: process.env.PLATFORM_ADDRESS,
-      };
-      console.log(swapResultData);
-
+      console.log("Swap successful")
     } else {
       console.log("Swap transaction failed");
       return;
@@ -149,21 +152,23 @@ async function depositToken(amount: number) {
       ethers.utils.parseUnits(amount.toString(), Number(decimals))
     );
 
+    // const depositResultData = {
+    //   //userID
+    //   //packID
+    //   senderWalletAddress: signer.address, // user's wallet address
+    //   targetWalletAddress: process.env.PLATFORM_ADDRESS,
+    //   txnHash: depositTx.hash,
+    //   swapToken: process.env.USDT_ADDRESS,
+    //   amountIn: amount.toString(),
+    //   amountOut: amount.toString(),
+    // };
+    // // POST API CREATE TRANSACTION (/transaction) WITH ABOVE DATA
+
     const depositReceipt = await depositTx.wait();
     
     // Check if the transaction was successful
     if (depositReceipt.status === 1) {
-      
-      const despositResultData = {
-        hash: depositReceipt.transactionHash,
-        inputToken: process.env.USDT_ADDRESS,
-        amountIn: amount.toString(),
-        amountOut: amount.toString(),
-        fromAddress: signer.address, // user's wallet address
-        receiverAddress: process.env.PLATFORM_ADDRESS,
-      };
-      console.log(despositResultData);
-
+      console.log("Deposit successful")
     } else {
       console.log("Deposit transaction failed");
       return;
