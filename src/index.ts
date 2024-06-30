@@ -24,12 +24,12 @@ const OtherTokenAddress = "0xec5dcb5dbf4b114c9d0f65bccab49ec54f6a0867"; // DAI
 
 async function main() {
   // await convertOtherTokenToUSDTAndTransferToPlatformAddress(0.01, 1);
-  // await getOtherTokenAmountForExactUSDT(1, OtherTokenAddress)
-  await depositToken(0.01)
+  await getOtherTokenAmountForExactUSDT(1, 1, OtherTokenAddress)
+  // await depositToken(0.01)
 }
 
 async function convertOtherTokenToUSDTAndTransferToPlatformAddress(
-  USDTRequired: number, slippageTolerance: number
+  USDTRequired: any, slippageTolerance: any
 ) {
   console.log("USDTRequired===>", USDTRequired);
 
@@ -58,10 +58,14 @@ async function convertOtherTokenToUSDTAndTransferToPlatformAddress(
   const amountInOtherToken = amountsIn[0];
   console.log("amountInOtherToken===>", ethers.utils.formatUnits(amountInOtherToken, otherTokenDecimals));
 
+  const slippage = 1 + slippageTolerance / 100;
+  const amountInMaxWithSlippage = amountInOtherToken.mul(ethers.BigNumber.from(Math.floor(slippage * 100))).div(ethers.BigNumber.from(100));
+  console.log("amountInMaxWithSlippage===>", ethers.utils.formatUnits(amountInMaxWithSlippage, otherTokenDecimals));
+
   const otherTokenAllowance = await checkAllowance(OtherTokenAddress);
   console.log("otherTokenAllowance===>", ethers.utils.formatUnits(otherTokenAllowance, otherTokenDecimals));
 
-  if (otherTokenAllowance.lt(amountInOtherToken)) {
+  if (otherTokenAllowance.lt(amountInMaxWithSlippage)) {
     console.log("ALLOWANCE LOW, TRANSACTION TO APPROVE TOKEN SPEND");
     try {
       const approveTx = await tokenContract.approve(
@@ -88,12 +92,8 @@ async function convertOtherTokenToUSDTAndTransferToPlatformAddress(
   }
 
   try {
-    const slippage = 1 + slippageTolerance / 100;
-    const amountInMaxWithSlippage = amountInOtherToken.mul(ethers.BigNumber.from(Math.floor(slippage * 100))).div(ethers.BigNumber.from(100));
     const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes from now
-
-    console.log("amountInMaxWithSlippage===>", ethers.utils.formatUnits(amountInMaxWithSlippage, otherTokenDecimals));
-
+ 
     console.log("SWAP TRANSACTION");
 
     const swapTx = await routerContract.swapTokensForExactTokens(
@@ -172,7 +172,7 @@ async function depositToken(amount: number) {
 // HELPER FUNCTIONS
 
 // Get swap token buy amount for exact USDT
-async function getOtherTokenAmountForExactUSDT(exactUSDTAmount: number, OtherTokenAddress: any) {
+async function getOtherTokenAmountForExactUSDT(exactUSDTAmount: any, slippageTolerance: any, OtherTokenAddress: any) {
   try {
     if (!process.env.ROUTER_V2_ADDRESS) {
       throw new Error("ROUTER_V2_ADDRESS is not defined in the environment variables");
@@ -195,7 +195,11 @@ async function getOtherTokenAmountForExactUSDT(exactUSDTAmount: number, OtherTok
     const amountInOtherToken = amountsIn[0];
     console.log("amountInOtherToken===>", ethers.utils.formatUnits(amountInOtherToken, otherTokenDecimals));
 
-    return ethers.utils.formatUnits(amountInOtherToken, otherTokenDecimals);
+    const slippage = 1 + slippageTolerance / 100;
+    const amountInMaxWithSlippage = amountInOtherToken.mul(ethers.BigNumber.from(Math.floor(slippage * 100))).div(ethers.BigNumber.from(100));
+    console.log("amountInMaxWithSlippage===>", ethers.utils.formatUnits(amountInMaxWithSlippage, otherTokenDecimals));
+
+    return ethers.utils.formatUnits(amountInMaxWithSlippage, otherTokenDecimals);
   } catch (error) {
     console.error("Error in getOtherTokenAmountForExactUSDT:", error);
   }
