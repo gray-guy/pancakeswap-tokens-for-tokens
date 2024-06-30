@@ -15,19 +15,23 @@ if (!process.env.USDT_ADDRESS) {
   throw new Error("USDT_ADDRESS is not defined in the environment variables");
 }
 
+// ALREADY SET IN FRONT-END
 const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_PROVIDER);
 const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+
+
 const routerContract = new ethers.Contract(process.env.ROUTER_V2_ADDRESS, uniswapAbi, signer);
 
 // Tokens database
 const OtherTokenAddress = "0xec5dcb5dbf4b114c9d0f65bccab49ec54f6a0867"; // DAI
 
 async function main() {
-  // await convertOtherTokenToUSDTAndTransferToPlatformAddress(0.01, 1);
+  // await convertOtherTokenToUSDTAndTransferToPlatformAddress(50, 1);
   await getOtherTokenAmountForExactUSDT(1, 1, OtherTokenAddress)
   // await depositToken(0.01)
 }
 
+// USE FOR OTHER TOKEN PAYMENTS
 async function convertOtherTokenToUSDTAndTransferToPlatformAddress(
   USDTRequired: any, slippageTolerance: any
 ) {
@@ -130,6 +134,7 @@ async function convertOtherTokenToUSDTAndTransferToPlatformAddress(
   }
 }
 
+// USE FOR USDT DIRECT PAYMENTS
 async function depositToken(amount: number) {
   
   try {
