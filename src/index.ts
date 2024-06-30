@@ -24,6 +24,7 @@ const OtherTokenAddress = "0xec5dcb5dbf4b114c9d0f65bccab49ec54f6a0867"; // DAI
 
 async function main() {
   await convertOtherTokenToUSDTAndTransferToPlatformAddress(0.01, 1);
+  // await getOtherTokenAmountForExactUSDT(1, OtherTokenAddress)
 }
 
 async function convertOtherTokenToUSDTAndTransferToPlatformAddress(
@@ -128,12 +129,34 @@ async function convertOtherTokenToUSDTAndTransferToPlatformAddress(
   }
 }
 
-// Get swap token in amount with dynamic decimals
-async function getAmountsInExact(amountOut: string, inDecimals: any, outDecimals: any) {
-  return routerContract.getAmountsIn(
-    ethers.utils.parseUnits(amountOut, outDecimals),
-    [OtherTokenAddress, process.env.USDT_ADDRESS]
-  );
+// Get swap token buy amount for exact USDT
+async function getOtherTokenAmountForExactUSDT(exactUSDTAmount: number, OtherTokenAddress: any) {
+  try {
+    if (!process.env.ROUTER_V2_ADDRESS) {
+      throw new Error("ROUTER_V2_ADDRESS is not defined in the environment variables");
+    }
+    const routerContract = new ethers.Contract(process.env.ROUTER_V2_ADDRESS, uniswapAbi, signer);
+    const usdtDecimals = await getTokenDecimals(process.env.USDT_ADDRESS);
+    const otherTokenDecimals = await getTokenDecimals(OtherTokenAddress);
+
+    // console.log("usdtDecimals===>", usdtDecimals);
+    // console.log("otherTokenDecimals===>", otherTokenDecimals);
+
+    const amountOutExactUSDT = ethers.utils.parseUnits(exactUSDTAmount.toString(), usdtDecimals);
+    // console.log("amountOutExactUSDT===>", amountOutExactUSDT.toString());
+
+    const amountsIn = await routerContract.getAmountsIn(
+      amountOutExactUSDT,
+      [OtherTokenAddress, process.env.USDT_ADDRESS]
+    );
+
+    const amountInOtherToken = amountsIn[0];
+    console.log("amountInOtherToken===>", ethers.utils.formatUnits(amountInOtherToken, otherTokenDecimals));
+
+    return ethers.utils.formatUnits(amountInOtherToken, otherTokenDecimals);
+  } catch (error) {
+    console.error("Error in getOtherTokenAmountForExactUSDT:", error);
+  }
 }
 
 // Check token allowance
