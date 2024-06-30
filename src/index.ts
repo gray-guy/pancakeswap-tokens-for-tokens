@@ -23,8 +23,9 @@ const routerContract = new ethers.Contract(process.env.ROUTER_V2_ADDRESS, uniswa
 const OtherTokenAddress = "0xec5dcb5dbf4b114c9d0f65bccab49ec54f6a0867"; // DAI
 
 async function main() {
-  await convertOtherTokenToUSDTAndTransferToPlatformAddress(0.01, 1);
+  // await convertOtherTokenToUSDTAndTransferToPlatformAddress(0.01, 1);
   // await getOtherTokenAmountForExactUSDT(1, OtherTokenAddress)
+  await depositToken(0.01)
 }
 
 async function convertOtherTokenToUSDTAndTransferToPlatformAddress(
@@ -128,6 +129,47 @@ async function convertOtherTokenToUSDTAndTransferToPlatformAddress(
     console.log("Swap Error", err);
   }
 }
+
+async function depositToken(amount: number) {
+  
+  try {
+    if (!process.env.USDT_ADDRESS) {
+      throw new Error("USDT_ADDRESS is not defined in the environment variables");
+    }
+    const usdtTokenContract = new ethers.Contract(process.env.USDT_ADDRESS, erc20Abi, signer);
+    const decimals = await usdtTokenContract.decimals();
+    
+    const depositTx = await usdtTokenContract.transfer(
+      process.env.PLATFORM_ADDRESS,
+      ethers.utils.parseUnits(amount.toString(), Number(decimals))
+    );
+
+    const depositReceipt = await depositTx.wait();
+    
+    // Check if the transaction was successful
+    if (depositReceipt.status === 1) {
+      
+      const despositResultData = {
+        hash: depositReceipt.transactionHash,
+        inputToken: process.env.USDT_ADDRESS,
+        amountIn: amount.toString(),
+        amountOut: amount.toString(),
+        fromAddress: signer.address, // user's wallet address
+        receiverAddress: process.env.PLATFORM_ADDRESS,
+      };
+      console.log(despositResultData);
+
+    } else {
+      console.log("Deposit transaction failed");
+      return;
+    }
+  } catch (err) {
+    console.log("Deposit Error", err);
+  }
+  
+}
+
+// HELPER FUNCTIONS
 
 // Get swap token buy amount for exact USDT
 async function getOtherTokenAmountForExactUSDT(exactUSDTAmount: number, OtherTokenAddress: any) {
